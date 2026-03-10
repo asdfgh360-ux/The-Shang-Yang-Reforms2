@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>商鞅变法 - 教学版</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Microsoft YaHei", "KaiTi", serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); min-height: 100vh; color: #e0e0e0; padding: 15px; }
+    .container { max-width: 1100px; margin: 0 auto; }
+    .header { text-align: center; margin-bottom: 20px; padding: 20px; background: rgba(0,0,0,0.35); border-radius: 15px; border: 1px solid rgba(255,215,0,0.25); }
+    .logo { font-size: 2.5rem; margin-bottom: 5px; }
+    .title { font-size: 1.8rem; color: #ffd700; margin-bottom: 5px; font-family: "KaiTi","STKaiti",serif; }
+    .subtitle { color: #888; font-size: 0.9rem; }
+    
+    /* 变法树 */
+    .reform-tree { background: rgba(0,0,0,0.3); border-radius: 12px; padding: 15px; margin-bottom: 20px; border: 1px solid rgba(255,215,0,0.15); }
+    .tree-title { color: #ffd700; font-size: 1rem; margin-bottom: 12px; }
+    .tree-nodes { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+    .tree-node { flex: 1; min-width: 70px; text-align: center; padding: 10px 5px; border-radius: 8px; background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.1); transition: all 0.3s; cursor: pointer; }
+    .tree-node:hover { border-color: rgba(255,215,0,0.3); }
+    .tree-node.completed { background: rgba(74,222,128,0.2); border-color: #4ade80; color: #4ade80; }
+    .node-icon { font-size: 1.5rem; margin-bottom: 5px; }
+    .node-name { font-size: 0.7rem; }
+    
+    /* 状态栏 */
+    .stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    @media (max-width: 700px) { .stats-bar { grid-template-columns: repeat(2, 1fr); } }
+    .stat-box { background: rgba(0,0,0,0.35); border-radius: 12px; padding: 15px 10px; text-align: center; border: 1px solid rgba(255,255,255,0.1); transition: border-color 0.3s; }
+    .stat-box.low { border-color: #e94560; }
+    .stat-box.high { border-color: #4ade80; }
+    .stat-icon { font-size: 1.8rem; margin-bottom: 8px; }
+    .stat-value { font-size: 1.4rem; font-weight: 700; color: #ffd700; }
+    .stat-bar-wrap { height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-top: 8px; overflow: hidden; }
+    .stat-bar-fill { height: 100%; border-radius: 3px; transition: width 0.5s; background: linear-gradient(90deg, #ffd700, #ff6b35); }
+    .stat-label { font-size: 0.7rem; color: #888; margin-top: 5px; }
+    
+    /* 主区域 */
+    .main-area { display: grid; grid-template-columns: 1fr 360px; gap: 20px; }
+    @media (max-width: 900px) { .main-area { grid-template-columns: 1fr; } }
+    .left-panel { display: flex; flex-direction: column; gap: 15px; }
+    
+    /* 派系 */
+    .factions-box { background: rgba(0,0,0,0.3); border-radius: 15px; padding: 18px; border: 1px solid rgba(255,215,0,0.15); }
+    .box-title { color: #ffd700; font-size: 1.05rem; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+    .faction-card { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 15px; margin-bottom: 12px; border-left: 4px solid; cursor: pointer; transition: all 0.2s; }
+    .faction-card:hover { transform: translateX(4px); }
+    .faction-card.noble { border-color: #9c27b0; }
+    .faction-card.military { border-color: #e94560; }
+    .faction-card.common { border-color: #4ade80; }
+    .faction-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .faction-name { font-weight: 700; font-size: 1rem; }
+    .faction-mood { font-size: 1.8rem; }
+    .faction-bar-wrap { background: rgba(255,255,255,0.08); height: 10px; border-radius: 5px; overflow: hidden; margin-bottom: 8px; }
+    .faction-bar { height: 100%; border-radius: 5px; transition: width 0.5s ease; }
+    .bar-noble { background: linear-gradient(90deg, #9c27b0, #ce93d8); }
+    .bar-military { background: linear-gradient(90deg, #e94560, #ff8a80); }
+    .bar-common { background: linear-gradient(90deg, #4ade80, #a5d6a7); }
+    .faction-quote { font-size: 0.85rem; color: #aaa; font-style: italic; padding: 8px; background: rgba(0,0,0,0.2); border-radius: 6px; }
+    
+    /* 事件 */
+    .event-box { background: rgba(233,69,96,0.12); border-radius: 15px; padding: 18px; border: 2px solid rgba(233,69,96,0.45); animation: fadeIn 0.4s; }
+    @keyframes fadeIn { from { opacity:0; transform: translateY(-15px); } to { opacity:1; transform: translateY(0); } }
+    .event-title { color: #e94560; font-size: 1.1rem; font-weight: 700; margin-bottom: 10px; }
+    .event-desc { color: #ccc; line-height: 1.7; margin-bottom: 15px; }
+    .event-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+    .choice-btn { flex: 1; min-width: 100px; background: rgba(233,69,96,0.25); border: 1px solid #e94560; color: #fff; padding: 12px 15px; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 0.9rem; transition: all 0.2s; }
+    .choice-btn:hover { background: #e94560; transform: translateY(-2px); }
+    .choice-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    
+    /* 日志 */
+    .log-box { background: rgba(0,0,0,0.35); border-radius: 12px; padding: 15px; max-height: 155px; overflow-y: auto; }
+    .log-item { padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.88rem; }
+    .log-time { color: #666; font-size: 0.78rem; margin-right: 8px; }
+    
+    /* 右侧 */
+    .right-panel { display: flex; flex-direction: column; gap: 15px; }
+    .turn-box { background: rgba(255,215,0,0.1); border-radius: 12px; padding: 18px; text-align: center; border: 1px solid rgba(255,215,0,0.3); }
+    .turn-number { font-size: 1.8rem; font-weight: 900; color: #ffd700; }
+    .turn-phase { color: #888; margin-top: 5px; font-size: 0.9rem; }
+    .turn-hint { margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 8px; font-size: 0.83rem; color: #aaa; }
+    
+    /* 卡牌 */
+    .cards-area { background: rgba(0,0,0,0.3); border-radius: 15px; padding: 18px; border: 1px solid rgba(255,255,255,0.1); }
+    .cards-container { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
+    .game-card { background: linear-gradient(145deg, #2d2d44, #1a1a2e); border-radius: 12px; padding: 15px; border: 2px solid rgba(255,255,255,0.1); cursor: pointer; transition: all 0.25s; }
+    .game-card:hover { border-color: rgba(255,215,0,0.45); transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+    .game-card.selected { border-color: #ffd700; box-shadow: 0 0 25px rgba(255,215,0,0.3); }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .card-name { font-weight: 700; color: #ffd700; font-size: 1rem; }
+    .card-cost { background: rgba(255,215,0,0.15); padding: 4px 10px; border-radius: 15px; font-size: 0.8rem; color: #ffd700; }
+    .card-desc { font-size: 0.88rem; color: #aaa; margin-bottom: 10px; line-height: 1.5; }
+    .card-effects { display: flex; gap: 10px; flex-wrap: wrap; font-size: 0.8rem; }
+    .eff-pos { color: #4ade80; }
+    .eff-neg { color: #e94560; }
+    .eff-neu { color: #ffd700; }
+    
+    /* 按钮 */
+    .action-area { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; }
+    .action-btn { background: linear-gradient(145deg, #8b4513, #654321); border: none; color: #fff; padding: 14px; border-radius: 10px; font-size: 1rem; font-weight: 700; cursor: pointer; font-family: inherit; transition: all 0.2s; }
+    .action-btn:hover { filter: brightness(1.15); transform: translateY(-2px); }
+    .action-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .action-btn.secondary { background: linear-gradient(145deg, #4a5568, #2d3748); }
+    .history-btn { background: rgba(255,215,0,0.15); border: 1px solid rgba(255,215,0,0.3); color: #ffd700; padding: 12px; border-radius: 10px; font-family: inherit; font-size: 0.9rem; cursor: pointer; transition: background 0.2s; width: 100%; }
+    .history-btn:hover { background: rgba(255,215,0,0.25); }
+    
+    /* 弹窗 */
+    .modal-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.88); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
+    .modal-overlay.show { display: flex; }
+    .modal { background: linear-gradient(145deg, #2d2d44, #1a1a2e); border-radius: 20px; padding: 30px; max-width: 580px; width: 100%; max-height: 82vh; overflow-y: auto; border: 2px solid rgba(255,215,0,0.3); }
+    .modal-title { font-size: 1.8rem; color: #ffd700; margin-bottom: 20px; text-align: center; }
+    .modal-section { margin-bottom: 18px; }
+    .modal-section h3 { color: #ffd700; margin-bottom: 10px; font-size: 1.05rem; }
+    .modal-section p { color: #aaa; line-height: 1.7; margin-bottom: 8px; }
+    .modal-section ul { color: #aaa; padding-left: 20px; line-height: 1.85; }
+    .close-btn { background: linear-gradient(145deg, #8b4513, #654321); border: none; color: #fff; padding: 12px 40px; border-radius: 10px; font-size: 1rem; font-weight: 700; cursor: pointer; font-family: inherit; display: block; margin: 20px auto 0; }
+    
+    .ending-title { font-size: 2rem; text-align: center; margin-bottom: 15px; }
+    .ending-title.success { color: #4ade80; }
+    .ending-title.tragic { color: #e94560; }
+    .ending-title.warning { color: #f59e0b; }
+    .ending-desc { color: #ccc; line-height: 1.8; margin-bottom: 20px; text-align: center; }
+    .ending-stats { background: rgba(0,0,0,0.4); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+    .ending-stat { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .ending-stat:last-child { border-bottom: none; }
+    .history-fact { background: rgba(255,215,0,0.1); border-left: 3px solid #ffd700; padding: 15px; border-radius: 0 8px 8px 0; margin: 15px 0; }
+    .history-fact-title { color: #ffd700; font-weight: 700; margin-bottom: 8px; }
+    .history-fact-content { color: #aaa; line-height: 1.7; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="logo">⚔️</div>
+    <div class="title">商鞅变法</div>
+    <div class="subtitle">治世不一道，便国不法古 · 教学版 · 共24回合（2年）</div>
+  </div>
+
+  <!-- 变法进度树 -->
+  <div class="reform-tree">
+    <div class="tree-title">📜 变法进度（推行后会亮起）</div>
+    <div class="tree-nodes" id="reform-tree">
+      <div class="tree-node" data-id="jungong"><div class="node-icon">📜</div><div class="node-name">军功爵</div></div>
+      <div class="tree-node" data-id="jingtian"><div class="node-icon">🌾</div><div class="node-name">废井田</div></div>
+      <div class="tree-node" data-id="lianzuo"><div class="node-icon">🔗</div><div class="node-name">连坐法</div></div>
+      <div class="tree-node" data-id="nongzhan"><div class="node-icon">🏗️</div><div class="node-name">重农抑商</div></div>
+      <div class="tree-node" data-id="duliang"><div class="node-icon">📏</div><div class="node-name">统一度量</div></div>
+      <div class="tree-node" data-id="qianzuo"><div class="node-icon">🏛️</div><div class="node-name">迁都咸阳</div></div>
+    </div>
+  </div>
+
+  <!-- 状态栏 -->
+  <div class="stats-bar">
+    <div class="stat-box" id="box-favor">
+      <div class="stat-icon">👑</div>
+      <div class="stat-value" id="val-favor">10</div>
+      <div class="stat-bar-wrap"><div class="stat-bar-fill" id="bar-favor" style="width:50%"></div></div>
+      <div class="stat-label">君宠（秦孝公信任）</div>
+    </div>
+    <div class="stat-box" id="box-power">
+      <div class="stat-icon">⚔️</div>
+      <div class="stat-value" id="val-power">30</div>
+      <div class="stat-bar-wrap"><div class="stat-bar-fill" id="bar-power" style="width:30%"></div></div>
+      <div class="stat-label">国力</div>
+    </div>
+    <div class="stat-box" id="box-progress">
+      <div class="stat-icon">📜</div>
+      <div class="stat-value" id="val-progress">0%</div>
+      <div class="stat-bar-wrap"><div class="stat-bar-fill" id="bar-progress" style="width:0%"></div></div>
+      <div class="stat-label">变法进度</div>
+    </div>
+    <div class="stat-box" id="box-stability">
+      <div class="stat-icon">⚖️</div>
+      <div class="stat-value" id="val-stability">80</div>
+      <div class="stat-bar-wrap"><div class="stat-bar-fill" id="bar-stability" style="width:80%"></div></div>
+      <div class="stat-label">稳定度</div>
+    </div>
+  </div>
+
+  <!-- 主区域 -->
+  <div class="main-area">
+    <!-- 左侧 -->
+    <div class="left-panel">
+      <div class="factions-box">
+        <div class="box-title">🏛️ 三派势力（点击了解历史背景）</div>
+        <div class="faction-card noble" onclick="showFaction('noble')">
+          <div class="faction-header">
+            <span class="faction-name">🎭 旧贵族</span>
+            <span class="faction-mood" id="mood-noble">😡</span>
+          </div>
+          <div class="faction-bar-wrap"><div class="faction-bar bar-noble" id="fb-noble" style="width:20%"></div></div>
+          <div class="faction-quote" id="quote-noble">"世袭特权不可动！"</div>
+        </div>
+        <div class="faction-card military" onclick="showFaction('military')">
+          <div class="faction-header">
+            <span class="faction-name">⚔️ 军方</span>
+            <span class="faction-mood" id="mood-military">😐</span>
+          </div>
+          <div class="faction-bar-wrap"><div class="faction-bar bar-military" id="fb-military" style="width:50%"></div></div>
+          <div class="faction-quote" id="quote-military">"军功赏赐要丰厚！"</div>
+        </div>
+        <div class="faction-card common" onclick="showFaction('common')">
+          <div class="faction-header">
+            <span class="faction-name">🌾 平民</span>
+            <span class="faction-mood" id="mood-common">😐</span>
+          </div>
+          <div class="faction-bar-wrap"><div class="faction-bar bar-common" id="fb-common" style="width:50%"></div></div>
+          <div class="faction-quote" id="quote-common">"废井田能分地就好"</div>
+        </div>
+      </div>
+
+      <div class="event-box" id="event-box" style="display:none">
+        <div class="event-title" id="event-title">⚠️ 突发事件</div>
+        <div class="event-desc" id="event-desc"></div>
+        <div class="event-choices" id="event-choices"></div>
+      </div>
+
+      <div class="log-box" id="log-box">
+        <div class="log-item"><span class="log-time">第1年 春</span>秦孝公颁布求贤令，商鞅入秦</div>
+      </div>
+    </div>
+
+    <!-- 右侧 -->
+    <div class="right-panel">
+      <div class="turn-box">
+        <div class="turn-number" id="turn-display">第 1 回合</div>
+        <div class="turn-phase" id="phase-display">变法第1年 春</div>
+        <div class="turn-hint" id="turn-hint">💡 选择变法措施推行，或暂缓积累君宠</div>
+      </div>
+      <div class="cards-area">
+        <div class="box-title">🎴 选择变法措施（每回合2选1）</div>
+        <div class="cards-container" id="cards-container"></div>
+      </div>
+      <div class="action-area">
+        <button class="action-btn" id="play-btn" onclick="playCard()">推行变法</button>
+        <button class="action-btn secondary" onclick="skipTurn()">暂缓观望</button>
+      </div>
+      <button class="history-btn" onclick="openModal('history-modal')">📖 历史小课堂</button>
+    </div>
+  </div>
+</div>
+
+<!-- 历史小课堂 -->
+<div class="modal-overlay" id="history-modal">
+  <div class="modal">
+    <div class="modal-title">📖 历史小课堂</div>
+    <div class="modal-section">
+      <h3>🎯 什么是商鞅变法？</h3>
+      <p>公元前356年，商鞅在秦孝公支持下推行变法，使秦国从边陲弱国变成战国最强，为统一六国奠定基础。</p>
+    </div>
+    <div class="modal-section">
+      <h3>📜 六项核心变法</h3>
+      <ul>
+        <li><b>军功爵制</b>：废除世卿世禄，按军功授爵</li>
+        <li><b>废井田</b>：承认土地私有，开阡陌封疆</li>
+        <li><b>连坐法</b>：一人犯罪，邻里连坐</li>
+        <li><b>重农抑商</b>：奖励耕织，限制商业</li>
+        <li><b>统一度量衡</b>：统一秦国各地标准</li>
+        <li><b>迁都咸阳</b>：东向争霸，据天下上游</li>
+      </ul>
+    </div>
+    <div class="modal-section">
+      <h3>⚖️ 变法的代价</h3>
+      <p>公元前338年秦孝公去世，商鞅失去保护。旧贵族报复，商鞅被处以"车裂"之刑。但新法未被废除，秦国继续强大。</p>
+      <p><b>思考：</b>变法成功了，人却死了——这说明什么？</p>
+    </div>
+    <button class="close-btn" onclick="closeModal('history-modal')">我知道了</button>
+  </div>
+</div>
+
+<!-- 派系弹窗 -->
+<div class="modal-overlay" id="faction-modal">
+  <div class="modal">
+    <div class="modal-title" id="faction-modal-title"></div>
+    <div id="faction-modal-body"></div>
+    <button class="close-btn" onclick="closeModal('faction-modal')">关闭</button>
+  </div>
+</div>
+
+<!-- 结局弹窗 -->
+<div class="modal-overlay" id="ending-modal">
+  <div class="modal">
+    <div class="ending-title" id="ending-title"></div>
+    <div class="ending-desc" id="ending-desc"></div>
+    <div class="ending-stats" id="ending-stats"></div>
+    <div class="history-fact" id="history-fact">
+      <div class="history-fact-title">📚 历史对照</div>
+      <div class="history-fact-content" id="history-fact-content"></div>
+    </div>
+    <button class="close-btn" onclick="restartGame()">重新开始</button>
+  </div>
+</div>
+
+<script>
+// ===== 数据 =====
+const SEASONS = ['春','夏','秋','冬'];
+
+const REFORM_CARDS = [
+  { id:'jungong',  name:'📜 军功爵制', cost:3, desc:'废除世卿世禄，按军功授爵，斩首一级赐爵一级。', eff:{noble:-25,military:20,power:10,progress:15,stability:-5} },
+  { id:'jingtian', name:'🌾 废井田',   cost:2, desc:'开阡陌封疆，承认土地私有，按亩纳税。',         eff:{noble:-20,common:15,power:5,progress:12,stability:-3} },
+  { id:'lianzuo',  name:'🔗 连坐法',   cost:1, desc:'令民为什伍，有罪连坐，告奸者与斩敌同赏。',   eff:{noble:-10,military:5,common:-15,power:8,progress:10,stability:5} },
+  { id:'nongzhan', name:'🏗️ 重农抑商', cost:1, desc:'奖励耕织，生产多者免役；弃农从商者罚为奴。', eff:{noble:-5,common:10,power:12,progress:8} },
+  { id:'duliang',  name:'📏 统一度量衡',cost:1, desc:'平斗桶权衡丈尺，便利税收和贸易。',           eff:{noble:-5,common:5,power:8,progress:8} },
+  { id:'qianzuo',  name:'🏛️ 迁都咸阳', cost:4, desc:'东向以制诸侯，据天下之上游。',               eff:{noble:-15,military:10,common:-5,power:15,progress:20,stability:-8} }
+];
+
+const EVENTS = [
+  { id:'taizi', turn:4, title:'⚠️ 太子犯法',
+    desc:'太子驷触犯新法，按律当刑。但太子是储君，不可施刑于身。其师傅公子虔、公孙贾代为受刑。你将如何处置？',
+    choices:[
+      {text:'师傅受劓刑，杀鸡儆猴', eff:{favor:-3,noble:-30,military:10,common:10,stability:5}},
+      {text:'师傅受黥刑，稍留余地', eff:{favor:-1,noble:-15,military:5,common:5}},
+      {text:'仅罚俸禄，维持关系',   eff:{favor:2,noble:10,military:-10,common:-10,progress:-10,stability:-10}}
+    ]},
+  { id:'ganlong', turn:8, title:'⚠️ 甘龙杜挚上书',
+    desc:'旧贵族领袖甘龙、杜挚联合上书秦孝公，引经据典，称"法古无过，循礼无邪"，强烈要求停止变法。',
+    choices:[
+      {text:'当庭驳斥，坚持变法',   eff:{favor:-2,noble:-20,progress:10,stability:-5}},
+      {text:'暂时退让，缓行部分法令',eff:{noble:15,progress:-15,stability:5}},
+      {text:'借君宠压制反对声音',   eff:{favor:-5,noble:-30,progress:15}, requireFavor:5}
+    ]},
+  { id:'hexi', turn:12, title:'🏆 河西之战',
+    desc:'秦军在军功爵制激励下士气大振，于河西与魏军展开决战！这是检验变法成果的重要时刻。',
+    choices:[
+      {text:'全力进攻，收复河西', eff:{military:15,power:10,stability:5}},
+      {text:'谨慎行事，保存实力', eff:{military:5,stability:0}}
+    ]},
+  { id:'sick', turn:20, title:'😷 秦孝公病重',
+    desc:'秦孝公突发重病，朝野震动。变法最大的靠山可能不久于人世，旧贵族蠢蠢欲动。',
+    choices:[
+      {text:'加速推进，抢占先机', eff:{favor:-5,progress:20,stability:-15}},
+      {text:'稳固根基，笼络各方', eff:{favor:3,noble:10,common:10,stability:10}}
+    ]}
+];
+
+const FACTION_HISTORY = {
+  noble: {
+    title: '🎭 旧贵族',
+    html: '<div class="modal-section"><h3>他们是谁？</h3><p>秦国的世袭贵族，依靠血缘关系世代享有封地、官位和特权，是传统秩序的捍卫者。</p></div><div class="modal-section"><h3>为什么反对变法？</h3><ul><li>军功爵制让平民也能晋升，动摇了他们的地位</li><li>废井田收回了他们的封地</li><li>连坐法削减了他们的特殊豁免权</li></ul></div><div class="modal-section"><h3>历史结果</h3><p>公子虔（太子师傅）被商鞅处以劓刑后，闭门不出八年，秦孝公一死就率先起兵诬告商鞅谋反，最终导致商鞅被车裂。</p></div>'
+  },
+  military: {
+    title: '⚔️ 军方',
+    html: '<div class="modal-section"><h3>他们是谁？</h3><p>秦国的将领和士兵，是变法最直接的受益者，也是变法成果的检验者。</p></div><div class="modal-section"><h3>对变法的态度</h3><ul><li>军功爵制给了士兵上升通道，普通士兵也能封爵</li><li>但严苛的法律（连坐）也约束了他们</li><li>希望打赢河西之战，证明新法有效</li></ul></div><div class="modal-section"><h3>历史结果</h3><p>变法后秦军战斗力大增，河西之战大败魏军，收复失地，军方成为变法最坚定的支持者。</p></div>'
+  },
+  common: {
+    title: '🌾 平民',
+    html: '<div class="modal-section"><h3>他们是谁？</h3><p>秦国的农民和普通百姓，人数最多，是国家财富和军队的根本来源。</p></div><div class="modal-section"><h3>对变法的态度</h3><ul><li>废井田让他们有了自己的土地</li><li>但连坐法让他们生活在监视下</li><li>重农政策让耕织者有了免役优惠</li></ul></div><div class="modal-section"><h3>历史结果</h3><p>变法后秦国农业产量大增，民众生活有所改善，但严苛的法律也让百姓苦不堪言，秦末农民大起义与此有深层关系。</p></div>'
+  }
+};
+
+// ===== 状态 =====
+const G = {
+  turn:1, year:1, sIdx:0,
+  favor:10, power:30, progress:0, stability:80,
+  noble:20, military:50, common:50,
+  hand:[], sel:null,
+  eventActive:false, over:false,
+  triggered:{},
+  done: new Set()
+};
+
+// ===== 辅助 =====
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+
+function applyEff(eff){
+  if(eff.favor)    G.favor    = clamp(G.favor    + eff.favor,    0, 20);
+  if(eff.power)    G.power    = clamp(G.power    + eff.power,    0, 100);
+  if(eff.progress) G.progress = clamp(G.progress + eff.progress, 0, 100);
+  if(eff.stability)G.stability= clamp(G.stability+ eff.stability, 0, 100);
+  if(eff.noble)    G.noble    = clamp(G.noble    + eff.noble,    0, 100);
+  if(eff.military) G.military = clamp(G.military + eff.military, 0, 100);
+  if(eff.common)   G.common   = clamp(G.common   + eff.common,  0, 100);
+}
+
+function addLog(msg){
+  const box = document.getElementById('log-box');
+  const d = document.createElement('div');
+  d.className = 'log-item';
+  d.innerHTML = `<span class="log-time">第${G.year}年 ${SEASONS[G.sIdx]}</span>${msg}`;
+  box.insertBefore(d, box.firstChild);
+}
+
+// ===== UI =====
+function updateUI(){
+  document.getElementById('val-favor').textContent = G.favor;
+  document.getElementById('val-power').textContent = G.power;
+  document.getElementById('val-progress').textContent = G.progress + '%';
+  document.getElementById('val-stability').textContent = G.stability;
+  document.getElementById('bar-favor').style.width    = (G.favor/20*100)+'%';
+  document.getElementById('bar-power').style.width    = (G.power/100*100)+'%';
+  document.getElementById('bar-progress').style.width = G.progress+'%';
+  document.getElementById('bar-stability').style.width= G.stability+'%';
+
+  document.getElementById('box-favor').className = 'stat-box' + (G.favor<=3?' low':G.favor>=15?' high':'');
+  document.getElementById('box-stability').className = 'stat-box' + (G.stability<=30?' low':G.stability>=70?' high':'');
+
+  document.getElementById('turn-display').textContent = '第 '+G.turn+' 回合';
+  document.getElementById('phase-display').textContent = '变法第'+G.year+'年 '+SEASONS[G.sIdx];
+
+  // 派系
+  updateFaction('noble',   G.noble);
+  updateFaction('military',G.military);
+  updateFaction('common',  G.common);
+}
+
+function updateFaction(id, val){
+  document.getElementById('fb-'+id).style.width = val+'%';
+  const mood = val>=65?'😊':val>=38?'😐':'😡';
+  document.getElementById('mood-'+id).textContent = mood;
+  const quotes = {
+    noble:   val>=65?'"新法也有可取之处..."':val>=38?'"观望，伺机而动"':'"世袭特权不可动！"',
+    military:val>=65?'"为秦国开疆拓土！"':val>=38?'"军功赏赐要丰厚！"':'"打了仗却没赏赐！"',
+    common:  val>=65?'"新法让我们有盼头！"':val>=38?'"废井田能分地就好"':'"苦不堪言，何时是头！"'
+  };
+  document.getElementById('quote-'+id).textContent = quotes[id];
+}
+
+function drawCards(){
+  const avail = [...REFORM_CARDS];
+  G.hand = [];
+  for(let i=0;i<2;i++){
+    const idx = Math.floor(Math.random()*avail.length);
+    G.hand.push(avail.splice(idx,1)[0]);
+  }
+  G.sel = 0;
+  renderCards();
+}
+
+function renderCards(){
+  const c = document.getElementById('cards-container');
+  c.innerHTML = '';
+  G.hand.forEach((card,i)=>{
+    const d = document.createElement('div');
+    d.className = 'game-card'+(i===G.sel?' selected':'');
+    d.onclick = ()=>{ if(!G.eventActive&&!G.over){G.sel=i; renderCards();} };
+
+    const effs = [];
+    const e = card.eff;
+    if(e.noble)    effs.push(`<span class="${e.noble>0?'eff-pos':'eff-neg'}">贵族${e.noble>0?'+':''}${e.noble}</span>`);
+    if(e.military) effs.push(`<span class="${e.military>0?'eff-pos':'eff-neg'}">军方${e.military>0?'+':''}${e.military}</span>`);
+    if(e.common)   effs.push(`<span class="${e.common>0?'eff-pos':'eff-neg'}">平民${e.common>0?'+':''}${e.common}</span>`);
+    if(e.power)    effs.push(`<span class="eff-neu">国力+${e.power}</span>`);
+    if(e.progress) effs.push(`<span class="eff-pos">进度+${e.progress}%</span>`);
+    if(e.stability)effs.push(`<span class="${e.stability>=0?'eff-pos':'eff-neg'}">稳定${e.stability>=0?'+':''}${e.stability}</span>`);
+
+    d.innerHTML = `
+      <div class="card-header">
+        <span class="card-name">${card.name}</span>
+        <span class="card-cost">消耗 ${card.cost} 君宠</span>
+      </div>
+      <div class="card-desc">${card.desc}</div>
+      <div class="card-effects">${effs.join('')}</div>`;
+    c.appendChild(d);
+  });
+}
+
+// ===== 主流程 =====
+function playCard(){
+  if(G.eventActive||G.over) return;
+  const card = G.hand[G.sel];
+  if(G.favor < card.cost){ addLog('⚠️ 君宠不足，无法推行！'); return; }
+  G.favor -= card.cost;
+  applyEff(card.eff);
+  G.done.add(card.id);
+  document.querySelector(`[data-id="${card.id}"]`)?.classList.add('completed');
+  addLog(`推行「${card.name}」，变法进度+${card.eff.progress||0}%`);
+  advance();
+}
+
+function skipTurn(){
+  if(G.eventActive||G.over) return;
+  G.favor = clamp(G.favor+2, 0, 20);
+  addLog('暂缓变法，积蓄力量（+2君宠）');
+  advance();
+}
+
+function advance(){
+  updateUI();
+  if(G.progress>=100){ endGame('success'); return; }
+  if(G.stability<=0) { endGame('chaos');   return; }
+  if(G.turn>=24)     { endGame('timeout'); return; }
+
+  G.turn++;
+  G.sIdx=(G.sIdx+1)%4;
+  if(G.sIdx===0) G.year++;
+
+  const ev = EVENTS.find(e=>e.turn===G.turn && !G.triggered[e.id]);
+  if(ev){ showEvent(ev); return; }
+  drawCards();
+  updateUI();
+}
+
+function showEvent(ev){
+  G.eventActive = true;
+  G.triggered[ev.id] = true;
+  const box = document.getElementById('event-box');
+  box.style.display='block';
+  document.getElementById('event-title').textContent = ev.title;
+  document.getElementById('event-desc').textContent  = ev.desc;
+  const cc = document.getElementById('event-choices');
+  cc.innerHTML='';
+  ev.choices.forEach(ch=>{
+    const b=document.createElement('button');
+    b.className='choice-btn';
+    b.textContent=ch.text;
+    if(ch.requireFavor && G.favor<ch.requireFavor){
+      b.disabled=true;
+      b.textContent+=` (需${ch.requireFavor}君宠)`;
+    }
+    b.onclick=()=>resolveEvent(ch);
+    cc.appendChild(b);
+  });
+}
+
+function resolveEvent(ch){
+  applyEff(ch.eff);
+  addLog(`📋 处置：${ch.text}`);
+  G.eventActive=false;
+  document.getElementById('event-box').style.display='none';
+  if(G.progress>=100){ endGame('success'); return; }
+  if(G.stability<=0) { endGame('chaos');   return; }
+  drawCards();
+  updateUI();
+}
+
+// ===== 结局 =====
+function endGame(type){
+  G.over = true;
+  const modal = document.getElementById('ending-modal');
+  const titleEl = document.getElementById('ending-title');
+  const descEl  = document.getElementById('ending-desc');
+  const statsEl = document.getElementById('ending-stats');
+  const factEl  = document.getElementById('history-fact-content');
+
+  const endings = {
+    success: {
+      label:'🏆 功成名就',
+      cls:'success',
+      desc:'变法大功告成！秦国焕然一新，军力大增，国力雄厚。秦孝公欲封你商地，你功成身退，得以善终。——这是历史的平行宇宙。',
+      fact:'真实历史中，商鞅并未善终。公元前338年秦孝公去世，商鞅失去庇护，被旧贵族以"谋反"罪处以车裂之刑。但他的新法却保留下来，成为秦国统一天下的基石。'
+    },
+    chaos: {
+      label:'💀 叛乱身亡',
+      cls:'tragic',
+      desc:'稳定度崩溃，旧贵族与不满的平民联合发动叛乱，商鞅在混乱中被杀，变法半途而废，秦国陷入内乱。',
+      fact:'商鞅变法中"连坐法"等严苛措施激起了民间不满。秦孝公死后，商鞅被迫出逃，但因为新法规定凡无验传者不得住店，他竟被自己立的法所困，最终被擒车裂。'
+    },
+    timeout: {
+      label: G.progress>=60?'⚠️ 车裂殉法':'❌ 周制复辟',
+      cls:   G.progress>=60?'warning':'tragic',
+      desc:  G.progress>=60?'变法已有成效，但孝公已逝，旧贵族卷土重来。商鞅被处以车裂之刑——正如真实历史。新法虽存，人已消逝。'
+                           :'变法推进迟缓，妥协太多。孝公死后新法难以为继，秦国渐渐回到旧轨。六国合纵攻秦，局面岌岌可危。',
+      fact: '公元前338年，秦孝公去世，太子驷即位（秦惠王）。公子虔等旧贵族立即诬告商鞅谋反，商鞅被迫出逃，最终被车裂。但秦惠王并未废除新法，商鞅"作法自毙"，而秦国因法而强。'
+    }
+  };
+
+  const e = endings[type];
+  titleEl.textContent=e.label;
+  titleEl.className='ending-title '+e.cls;
+  descEl.textContent=e.desc;
+  statsEl.innerHTML=`
+    <div class="ending-stat"><span>变法进度</span><span>${G.progress}%</span></div>
+    <div class="ending-stat"><span>国力</span><span>${G.power}</span></div>
+    <div class="ending-stat"><span>稳定度</span><span>${G.stability}</span></div>
+    <div class="ending-stat"><span>旧贵族支持度</span><span>${G.noble}%</span></div>
+    <div class="ending-stat"><span>军方支持度</span><span>${G.military}%</span></div>
+    <div class="ending-stat"><span>平民支持度</span><span>${G.common}%</span></div>
+    <div class="ending-stat"><span>完成回合</span><span>第${G.turn}回合（共24回合）</span></div>`;
+  factEl.textContent = e.fact;
+
+  document.getElementById('ending-modal').classList.add('show');
+}
+
+function restartGame(){
+  Object.assign(G,{turn:1,year:1,sIdx:0,favor:10,power:30,progress:0,stability:80,noble:20,military:50,common:50,hand:[],sel:null,eventActive:false,over:false,triggered:{},done:new Set()});
+  document.getElementById('ending-modal').classList.remove('show');
+  document.getElementById('event-box').style.display='none';
+  document.getElementById('log-box').innerHTML='<div class="log-item"><span class="log-time">第1年 春</span>秦孝公颁布求贤令，商鞅入秦</div>';
+  document.querySelectorAll('.tree-node').forEach(n=>n.classList.remove('completed'));
+  drawCards();
+  updateUI();
+}
+
+// ===== 弹窗 =====
+function openModal(id){ document.getElementById(id).classList.add('show'); }
+function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+
+function showFaction(id){
+  const info = FACTION_HISTORY[id];
+  document.getElementById('faction-modal-title').textContent = info.title;
+  document.getElementById('faction-modal-body').innerHTML = info.html;
+  openModal('faction-modal');
+}
+
+// ===== 启动 =====
+drawCards();
+updateUI();
+</script>
+</body>
+</html>
